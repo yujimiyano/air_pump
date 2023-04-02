@@ -1,80 +1,64 @@
 #include <Arduino.h>
-#include <Easing.h>
 
-EasingFunc<Ease::Cubic> e;
-float start_sec;
-float duration = 0.8;
-float scale = 255.;
+// 各種調整用の変数設定
+#define IN_TIME 4000  // 空気を入れる時間
+#define IN_DELAY 100  // 空気を入れるモータが動き始めるまでの時間
+#define IN_POWER 255  // 空気を入れるモータの強さ(0~255)
 
-#define AIN 1
-#define M1_A 5
-#define M1_B 9
-#define M2_A 6 
-#define M2_B 10
+#define OUT_TIME 4000 // 空気を抜く時間
+#define OUT_DELAY 100  // 空気を抜くモータが動き始めるまでの時間
+#define OUT_POWER 255 // 空気を抜くモータの強さ(0~255)
+
+// モータドライバL9110Sのピン設定
+#define M1_A 5  // 空気を入れるモータのピン設定A
+#define M1_B 9  // 空気を入れるモータのピン設定B
+#define M2_A 6  // 空気を抜くモータのピン設定A
+#define M2_B 10 // 空気を抜くモータのピン設定B
+
+// ソレノイド駆動用MOS-FETピン設定
 #define SOL 11
 
-
-#define PERIOD_LONG 1.5
-#define PERIOD_SHORT 0.9
-
-int val = 0;
-int out = 0;
-
+void inflate(); // 空気を入れる関数の宣言
+void deflate(); // 空気を抜く関数の宣言
 
 void setup() {
   Serial.begin(9600);
+
+  // モータ用のピンを出力に設定
   pinMode(M1_A, OUTPUT);
   pinMode(M1_B, OUTPUT);
   pinMode(M2_A, OUTPUT);
   pinMode(M2_B, OUTPUT);
+
+  // ソレノイド用のピンを出力に設定
   pinMode(SOL, OUTPUT);
-
-  e.duration(duration); // default duration is 1.0
-  e.scale(scale); // default scale is 1.0
-
-  start_sec = millis() / 1000.;
-
-  // analogWrite(M1_A, 255);
-  // analogWrite(M1_B, 0);
-  // analogWrite(M2_A, 255);
-  // analogWrite(M2_B, 0);
-
 }
 
 void loop() {
+  inflate();
+  deflate();
+}
 
-  // float now = millis() / 1000.;
+// 空気を入れる関数
+void inflate(){
+  digitalWrite(SOL, HIGH);  // ソレノイド駆動して、空気を入れるモータを風船に接続
+  delay(IN_DELAY);               // ソレノイドの駆動を待つ時間(要らないかも)
 
-  // float value = e.get(now - start_sec);
+  analogWrite(M1_A, IN_POWER);  // 空気を入れるモータを正転させる
+  analogWrite(M1_B, 0);   　    // 空気を入れるモータを正転させる
+  analogWrite(M2_A, 0);   　    // 空気を抜くモータを停止させる
+  analogWrite(M2_B, 0);　       // 空気を抜くモータを停止させる
+  delay(IN_TIME);               // 空気を入れる時間
+}
 
-  // Serial.println(value);
-  digitalWrite(SOL, HIGH);
-  delay(100);
-  analogWrite(M1_A, 255);
-  analogWrite(M1_B, 0);
-  analogWrite(M2_A, 0);
-  analogWrite(M2_B, 0);
+// 空気を抜く関数
+void deflate(){
+  digitalWrite(SOL, LOW);  // ソレノイド駆動して、空気を抜くモータを風船に接続
+  delay(OUT_DELAY);              // ソレノイドの駆動を待つ時間(要らないかも)
 
-  delay(4000);
-
-  digitalWrite(SOL, LOW);
-  delay(100);
-  analogWrite(M1_A, 0);
-  analogWrite(M1_B, 0);
-  analogWrite(M2_A, 255);
-  analogWrite(M2_B, 0);
-
-  delay(4000);
-
-
-  // if(value > 255)
-  // {
-  //   start_sec = millis() / 1000.;
-  //   if(duration == PERIOD_LONG) duration = PERIOD_SHORT;
-  //   else if(duration == PERIOD_SHORT) duration = PERIOD_LONG;
-  //   e.duration(duration); // default duration is 1.0
-  //   Serial.println(duration);
-  // }
-  // delay(50);
-  
+  analogWrite(M1_A, 0);           // 空気を入れるモータを停止させる
+  analogWrite(M1_B, 0);           // 空気を入れるモータを停止させる
+  analogWrite(M2_A, OUT_POWER);   // 空気を抜くモータを正転させる
+  analogWrite(M2_B, 0);           // 空気を抜くモータを正転させる
+  delay(OUT_TIME);                // 空気を抜く時間
 }
